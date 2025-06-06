@@ -1,0 +1,12 @@
+name: Claude Code Helper
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  auto-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Claude Code Action Official
+        uses: anthropics/claude-code-action@beta
