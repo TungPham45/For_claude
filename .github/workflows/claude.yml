@@ -5,7 +5,7 @@ on:
     types: [opened]
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   issues: write
   pull-requests: write
@@ -14,5 +14,8 @@ jobs:
   run-claude:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Claude Code Action Official
         uses: anthropics/claude-code-action@beta
