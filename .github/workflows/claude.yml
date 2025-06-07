@@ -1,96 +1,36 @@
-name: Claude Code Helper
+name: Claude PR Assistant
 
 on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
   issues:
-    types: [opened]
-
-permissions:
-  contents: write
-  id-token: write
-  issues: write
-  pull-requests: write
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
 
 jobs:
-  run-claude:
+  claude-code-action:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Call Claude API
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          # Debug: Check if API key exists
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "❌ ANTHROPIC_API_KEY not found"
-            exit 1
-          fi
-          echo "✅ API Key found (length: ${#ANTHROPIC_API_KEY})"
-
-          # Create JSON payload using jq (safe for text)
-          jq -n \
-            --arg title "${{ github.event.issue.title }}" \
-            --arg body "${{ github.event.issue.body }}" \
-            '{
-              model: "claude-3-sonnet-20240229",
-              max_tokens: 1000,
-              messages: [
-                {
-                  role: "user",
-                  content: ("Help with this GitHub issue: " + $title + " - " + $body)
-                }
-              ]
-            }' > payload.json
-
-          echo "=== Request Payload ==="
-          cat payload.json
-
-          # Call Claude API and capture response
-          HTTP_STATUS=$(curl -s -w "%{http_code}" -o claude_response.json \
-            -X POST https://api.anthropic.com/v1/messages \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: $ANTHROPIC_API_KEY" \
-            -H "anthropic-version: 2023-06-01" \
-            -d @payload.json)
-
-          echo "=== HTTP Status: $HTTP_STATUS ==="
-          cat claude_response.json
-
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "❌ Claude API call failed"
-            exit 1
-          fi
-
-      - name: Comment on issue
-        uses: actions/github-script@v7
         with:
-          script: |
-            const fs = require('fs');
+          fetch-depth: 1
 
-            try {
-              const response = JSON.parse(fs.readFileSync('claude_response.json', 'utf8'));
-              let content = '❌ Claude did not return a valid response.';
-
-              if (Array.isArray(response.content) && response.content[0]?.text) {
-                content = `🤖 **Claude's Analysis:**\n\n${response.content[0].text}`;
-              } else if (response.error?.message) {
-                content = `❌ **Claude API Error:** ${response.error.message}`;
-              }
-
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: content
-              });
-
-            } catch (error) {
-              const raw = fs.readFileSync('claude_response.json', 'utf8');
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `❌ Error reading Claude's response:\n\`\`\`\n${error.message}\n\`\`\`\n\nRaw response:\n\`\`\`json\n${raw.substring(0, 500)}...\n\`\`\``
-              });
-            }
+      - name: Run Claude PR Action
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          timeout_minutes: "60"
