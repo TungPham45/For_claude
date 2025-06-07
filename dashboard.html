@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <div class="nav-brand">
+                <h3><i class="fas fa-tachometer-alt"></i> Dashboard</h3>
+            </div>
+            <div class="nav-user">
+                <span class="user-welcome">Welcome, <span id="userName">User</span>!</span>
+                <button type="button" class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </nav>
+        
+        <main class="dashboard-main">
+            <div class="dashboard-content">
+                <h1>Welcome to Your Dashboard</h1>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Last Login</h3>
+                            <p id="lastLogin">Just now</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Session Time</h3>
+                            <p id="sessionTime">0 minutes</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Account Status</h3>
+                            <p>Active</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-actions">
+                    <h2>Quick Actions</h2>
+                    <div class="action-buttons">
+                        <button class="action-btn">
+                            <i class="fas fa-user-edit"></i>
+                            Edit Profile
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-cog"></i>
+                            Settings
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-question-circle"></i>
+                            Help
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="recent-activity">
+                    <h2>Recent Activity</h2>
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Successfully signed in</span>
+                            <small id="loginTime">Just now</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="login.js"></script>
+</body>
+</html>

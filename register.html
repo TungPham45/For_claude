@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h2><i class="fas fa-user-plus"></i> Create Account</h2>
+                <p>Join us today! Create your new account.</p>
+            </div>
+            
+            <form id="registerForm" class="auth-form">
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="firstName"><i class="fas fa-user"></i> First Name</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                        <span class="error-message" id="firstNameError"></span>
+                    </div>
+                    
+                    <div class="form-group half">
+                        <label for="lastName"><i class="fas fa-user"></i> Last Name</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                        <span class="error-message" id="lastNameError"></span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerEmail"><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="registerEmail" name="email" required>
+                    <span class="error-message" id="registerEmailError"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerPassword"><i class="fas fa-lock"></i> Password</label>
+                    <div class="password-input">
+                        <input type="password" id="registerPassword" name="password" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('registerPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength"></div>
+                    <span class="error-message" id="registerPasswordError"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword"><i class="fas fa-lock"></i> Confirm Password</label>
+                    <div class="password-input">
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span class="error-message" id="confirmPasswordError"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="agreeTerms" required>
+                        <span class="checkmark"></span>
+                        I agree to the <a href="#" class="auth-link">Terms of Service</a> and <a href="#" class="auth-link">Privacy Policy</a>
+                    </label>
+                    <span class="error-message" id="agreeTermsError"></span>
+                </div>
+                
+                <button type="submit" class="auth-btn primary">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+            
+            <div class="auth-divider">
+                <span>or</span>
+            </div>
+            
+            <div class="auth-footer">
+                <p>Already have an account? <a href="login.html" class="auth-link">Sign in here</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="login.js"></script>
+</body>
+</html>
