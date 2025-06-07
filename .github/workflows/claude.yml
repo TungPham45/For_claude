@@ -21,20 +21,27 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_BODY="${{ github.event.issue.body }}"
+
+          cat > payload.json <<EOF
+          {
+            "model": "claude-3-sonnet-20240229",
+            "max_tokens": 1000,
+            "messages": [
+              {
+                "role": "user",
+                "content": "Help with this GitHub issue: $ISSUE_TITLE - $ISSUE_BODY"
+              }
+            ]
+          }
+          EOF
+
           curl -X POST https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \
-            -d '{
-              "model": "claude-3-sonnet-20240229",
-              "max_tokens": 1000,
-              "messages": [
-                {
-                  "role": "user",
-                  "content": "Help with this GitHub issue: '${{ github.event.issue.title }}' - '${{ github.event.issue.body }}'"
-                }
-              ]
-            }' > claude_response.json
+            -d @payload.json > claude_response.json
 
       - name: Comment on issue
         uses: actions/github-script@v7
@@ -43,7 +50,7 @@ jobs:
             const fs = require('fs');
             const response = JSON.parse(fs.readFileSync('claude_response.json', 'utf8'));
             const content = response.content?.[0]?.text || '❌ Claude did not return a valid response.';
-            
+
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
