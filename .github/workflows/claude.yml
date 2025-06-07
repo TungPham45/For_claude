@@ -21,39 +21,96 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          ISSUE_TITLE="${{ github.event.issue.title }}"
-          ISSUE_BODY="${{ github.event.issue.body }}"
+          # Debug: Check if API key exists
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "❌ ANTHROPIC_API_KEY not found"
+            exit 1
+          fi
+          echo "✅ API Key found (length: ${#ANTHROPIC_API_KEY})"
 
-          cat > payload.json <<EOF
-          {
-            "model": "claude-3-sonnet-20240229",
-            "max_tokens": 1000,
-            "messages": [
-              {
-                "role": "user",
-                "content": "Help with this GitHub issue: $ISSUE_TITLE - $ISSUE_BODY"
-              }
-            ]
-          }
-          EOF
+          # Safely handle issue content with proper escaping
+          ISSUE_TITLE=$(echo '${{ github.event.issue.title }}' | jq -R .)
+          ISSUE_BODY=$(echo '${{ github.event.issue.body }}' | jq -R .)
 
-          curl -X POST https://api.anthropic.com/v1/messages \
+          # Create JSON payload using jq for proper escaping
+          jq -n \
+            --argjson title "$ISSUE_TITLE" \
+            --argjson body "$ISSUE_BODY" \
+            '{
+              "model": "claude-3-sonnet-20240229",
+              "max_tokens": 1000,
+              "messages": [
+                {
+                  "role": "user",
+                  "content": ("Help with this GitHub issue: " + $title + " - " + $body)
+                }
+              ]
+            }' > payload.json
+
+          echo "=== Request Payload ==="
+          cat payload.json
+
+          # Make API call and capture HTTP status
+          HTTP_STATUS=$(curl -w "%{http_code}" -X POST https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \
-            -d @payload.json > claude_response.json
+            -d @payload.json \
+            -o claude_response.json)
+
+          echo "=== HTTP Status: $HTTP_STATUS ==="
+          echo "=== API Response ==="
+          cat claude_response.json
+
+          # Check if API call was successful
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ API call failed with status $HTTP_STATUS"
+            echo "Response:" 
+            cat claude_response.json
+            exit 1
+          fi
 
       - name: Comment on issue
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const response = JSON.parse(fs.readFileSync('claude_response.json', 'utf8'));
-            const content = response.content?.[0]?.text || '❌ Claude did not return a valid response.';
+            
+            try {
+              const response = JSON.parse(fs.readFileSync('claude_response.json', 'utf8'));
+              console.log('Full API Response:', JSON.stringify(response, null, 2));
+              
+              let content = '❌ Claude did not return a valid response.';
+              
+              // Check for different response formats
+              if (response.content && Array.isArray(response.content) && response.content[0]) {
+                if (response.content[0].text) {
+                  content = `🤖 **Claude's Analysis:**\n\n${response.content[0].text}`;
+                }
+              } else if (response.error) {
+                content = `❌ **API Error:** ${response.error.message || JSON.stringify(response.error)}`;
+              } else if (response.message) {
+                content = `📝 **Response:** ${response.message}`;
+              }
 
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: content
-            });
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: content
+              });
+              
+            } catch (error) {
+              console.error('Error processing Claude response:', error);
+              
+              // Read raw file content for debugging
+              const rawContent = fs.readFileSync('claude_response.json', 'utf8');
+              console.log('Raw file content:', rawContent);
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `❌ **Error processing Claude's response:**\n\`\`\`\n${error.message}\n\`\`\`\n\n**Raw response:**\n\`\`\`json\n${rawContent.substring(0, 500)}...\n\`\`\``
+              });
+            }
